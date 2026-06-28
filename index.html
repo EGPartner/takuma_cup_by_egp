@@ -331,6 +331,13 @@
     }
     .team-edit-btn:active{opacity:.7;transform:scale(.9);}
     .gc-item-row{display:flex;align-items:center;justify-content:space-between;}
+    /* 試合カード内のチーム名 編集可能スタイル（管理者） */
+    .team-nm.editable{
+      cursor:pointer;
+      border-bottom:1px dashed rgba(0,230,118,.5);
+      padding-bottom:1px;
+    }
+    .team-nm.editable:active{opacity:.6;}
 
     /* ══════════════════════════════════
        MODAL
@@ -558,25 +565,31 @@ let activeFilter = 'all';
 let currentId = null;
 let db = null;
 
-// チーム名の表示名を取得（カスタム名がなければ元の名前）
+// Firebase key用エンコード（. $ # [ ] / は使えない）
+function fbKey(name){
+  return encodeURIComponent(name).replace(/[.$#[\]/]/g,'_');
+}
+
+// チーム名を取得（カスタム名 or 元の名前）
 function getTeamName(original){
   return teamNames[original] || original;
 }
 
-// Firebase key用エンコード（. $ # [ ] / は使えない）
-function fbKey(name){
-  return name.replace(/[.$#[\]/]/g,'_');
+// 試合カード用：試合IDとサイド(home/away)でオーバーライド可能
+function getMatchTeamName(matchId, side, original){
+  const key = 'match_' + matchId + '_' + side;
+  return teamNames[key] || teamNames[original] || original;
 }
 
-// チーム名を保存
-function persistTeamName(original, newName){
-  const trimmed = newName.trim();
-  if(!trimmed || trimmed === original){
-    delete teamNames[original];
-    if(db) db.ref('teamNames/' + fbKey(original)).remove().catch(e=>console.error(e));
+// チーム名をキーで保存（グループ名・試合個別どちらにも使う）
+function persistTeamName(key, newName){
+  const trimmed = (newName || '').trim();
+  if(!trimmed){
+    delete teamNames[key];
+    if(db) db.ref('teamNames/' + fbKey(key)).remove().catch(e=>console.error(e));
   } else {
-    teamNames[original] = trimmed;
-    if(db) db.ref('teamNames/' + fbKey(original)).set(trimmed)
+    teamNames[key] = trimmed;
+    if(db) db.ref('teamNames/' + fbKey(key)).set(trimmed)
       .catch(e=>alert('❌ チーム名の保存に失敗しました'));
   }
   try{localStorage.setItem('tc_teamNames', JSON.stringify(teamNames));}catch(e){}
@@ -585,13 +598,23 @@ function persistTeamName(original, newName){
   renderTeams();
 }
 
-// チーム名編集ダイアログ（管理者のみ）
+// グループタブのチーム名編集（参加チーム一覧から）
 function editTeamName(original){
   if(!isAdmin) return;
   const current = getTeamName(original);
   const newName = prompt(`チーム名を変更:\n元の名前: ${original}`, current);
   if(newName === null) return;
   persistTeamName(original, newName);
+}
+
+// 試合カード内のチーム名編集（直接タップ）
+function editMatchTeamName(matchId, side, original){
+  if(!isAdmin) return;
+  const key = 'match_' + matchId + '_' + side;
+  const current = teamNames[key] || teamNames[original] || original;
+  const newName = prompt(`チーム名を変更:`, current);
+  if(newName === null) return;
+  persistTeamName(key, newName);
 }
 
 // ─── 管理者判定 ───
@@ -743,9 +766,9 @@ function renderCard(m){
     <div class="mc-body">
       ${labelHtml}${noteHtml}
       <div class="teams-row">
-        <div class="team-col"><div class="team-nm">${getTeamName(m.home)}</div>${hScHtml}</div>
+        <div class="team-col"><div class="team-nm${isAdmin?' editable':''}" ${isAdmin?`onclick="editMatchTeamName(${m.id},'home','${m.home.replace(/'/g,"\\'")}');event.stopPropagation()"`:''}>${getMatchTeamName(m.id,'home',m.home)}</div>${hScHtml}</div>
         ${midHtml}
-        <div class="team-col"><div class="team-nm">${getTeamName(m.away)}</div>${aScHtml}</div>
+        <div class="team-col"><div class="team-nm${isAdmin?' editable':''}" ${isAdmin?`onclick="editMatchTeamName(${m.id},'away','${m.away.replace(/'/g,"\\'")}');event.stopPropagation()"`:''}>${getMatchTeamName(m.id,'away',m.away)}</div>${aScHtml}</div>
       </div>
     </div>
     <div class="mc-foot">
@@ -766,8 +789,8 @@ function openModal(id, e){
   currentId = id;
   document.getElementById('m-title').textContent = m.label || `${m.round} コート${m.court}`;
   document.getElementById('m-sub').textContent = `${m.cat} • ${m.time}`;
-  document.getElementById('m-home').textContent = getTeamName(m.home);
-  document.getElementById('m-away').textContent = getTeamName(m.away);
+  document.getElementById('m-home').textContent = getMatchTeamName(m.id,'home',m.home);
+  document.getElementById('m-away').textContent = getMatchTeamName(m.id,'away',m.away);
   const s = scores[id];
   document.getElementById('inp-h').value = s != null ? s.home : '';
   document.getElementById('inp-a').value = s != null ? s.away : '';
