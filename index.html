@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>タクマ塾CUP in 岩国</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+    :root{
+      --bg:#080808;
+      --surface:#111111;
+      --surface2:#1a1a1a;
+      --surface3:#222222;
+      --border:#2a2a2a;
+      --border2:#333333;
+      --text:#f5f5f5;
+      --text2:#a0a0a0;
+      --text3:#666666;
+      --green:#00e676;
+      --green-dim:#00c853;
+      --green-glow:rgba(0,230,118,.15);
+      --gold:#ffd600;
+      --gold-dim:#f9a825;
+      --blue:#448aff;
+      --orange:#ff6d00;
+      --purple:#7c4dff;
+      --red:#ff1744;
+      --radius:16px;
+      --radius-sm:10px;
+      --radius-lg:22px;
+    }
+
+    html{background:var(--bg);}
+    body{
+      font-family:-apple-system,'Hiragino Sans','Yu Gothic UI','Segoe UI',sans-serif;
+      background:var(--bg);color:var(--text);min-height:100vh;
+      padding-bottom:calc(72px + env(safe-area-inset-bottom));
+      overflow-x:hidden;
+    }
+
+    /* ══════════════════════════════════
+       HERO
+    ══════════════════════════════════ */
+    .hero{
+      position:relative;overflow:hidden;
+      min-height:min(520px, 72vw);
+      display:flex;align-items:flex-end;
+    }
+    .hero-img{
+      position:absolute;inset:0;width:100%;height:100%;
+      object-fit:cover;object-position:center top;
+      display:block;
+    }
+    /* dark gradient overlay */
+    .hero::before{
+      content:'';position:absolute;inset:0;z-index:1;
+      background:
+        linear-gradient(to bottom,
+          rgba(0,0,0,.15) 0%,
+          rgba(0,0,0,.05) 30%,
+          rgba(0,0,0,.55) 65%,
+          rgba(8,8,8,1) 100%);
+    }
+    /* green glow at bottom */
+    .hero::after{
+      content:'';position:absolute;bottom:0;left:0;right:0;height:2px;z-index:3;
+      background:linear-gradient(90deg,transparent,var(--green),transparent);
+    }
+    .h-inner{
+      position:relative;z-index:2;
+      width:100%;max-width:600px;margin:0 auto;
+      padding:0 20px calc(28px + env(safe-area-inset-top));
+      text-align:center;
+    }
+    .h-eyebrow{
+      display:inline-flex;align-items:center;gap:6px;
+      background:rgba(0,230,118,.12);border:1px solid rgba(0,230,118,.3);
+      color:var(--green);font-size:11px;font-weight:700;letter-spacing:2px;
+      padding:5px 14px;border-radius:20px;margin-bottom:12px;
+      text-transform:uppercase;backdrop-filter:blur(4px);
+    }
+    .h-title{
+      font-size:clamp(28px,8vw,48px);font-weight:900;letter-spacing:-1px;
+      line-height:1.05;margin-bottom:4px;color:#fff;
+      text-shadow:0 2px 20px rgba(0,0,0,.6);
+    }
+    .h-title span{
+      font-size:.55em;display:block;
+      background:linear-gradient(90deg,var(--green),var(--green-dim));
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+      letter-spacing:1px;font-weight:800;margin-top:2px;
+    }
+    .h-sub{font-size:13px;color:rgba(255,255,255,.7);margin-bottom:18px;text-shadow:0 1px 6px rgba(0,0,0,.5);}
+    .h-chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+    .h-chip{
+      background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+      border-radius:20px;padding:6px 14px;font-size:12px;color:var(--text2);
+      display:flex;align-items:center;gap:5px;
+    }
+    .h-chip b{color:var(--text);font-weight:700;}
+
+    /* ══════════════════════════════════
+       BOTTOM NAV (mobile-first)
+    ══════════════════════════════════ */
+    .bottom-nav{
+      position:fixed;bottom:0;left:0;right:0;z-index:300;
+      background:rgba(10,10,10,.92);
+      backdrop-filter:blur(20px) saturate(180%);
+      -webkit-backdrop-filter:blur(20px) saturate(180%);
+      border-top:1px solid var(--border);
+      padding:0 0 env(safe-area-inset-bottom);
+      display:flex;
+    }
+    .bnav-btn{
+      flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      padding:10px 6px 8px;cursor:pointer;gap:4px;transition:.2s;
+      color:var(--text3);font-size:10px;font-weight:700;letter-spacing:.5px;
+    }
+    .bnav-btn .ico{font-size:22px;transition:.2s;}
+    .bnav-btn.active{color:var(--green);}
+    .bnav-btn.active .ico{filter:drop-shadow(0 0 6px var(--green));}
+
+    /* ══════════════════════════════════
+       MAIN / TABS
+    ══════════════════════════════════ */
+    .main{max-width:600px;margin:0 auto;padding:16px 12px 20px;}
+    .tab{display:none;animation:fadeUp .25s ease;}.tab.active{display:block;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+    /* ══════════════════════════════════
+       FILTER BAR
+    ══════════════════════════════════ */
+    .filter-bar{display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;padding-bottom:2px;}
+    .filter-bar::-webkit-scrollbar{display:none;}
+    .fbtn{
+      flex-shrink:0;padding:7px 18px;border-radius:20px;
+      border:1.5px solid var(--border2);background:var(--surface2);
+      font-size:12px;font-weight:700;cursor:pointer;color:var(--text2);
+      transition:.15s;white-space:nowrap;
+    }
+    .fbtn:active{opacity:.7;}
+    .fbtn.active{background:var(--green);color:#000;border-color:var(--green);
+      box-shadow:0 0 16px rgba(0,230,118,.3);}
+
+    /* ══════════════════════════════════
+       ROUND BLOCK
+    ══════════════════════════════════ */
+    .round-block{margin-bottom:24px;}
+    .round-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+    .round-pill{
+      background:linear-gradient(135deg,var(--green-dim),var(--green));
+      color:#000;font-size:12px;font-weight:800;padding:5px 16px;
+      border-radius:20px;white-space:nowrap;letter-spacing:.3px;
+    }
+    .round-time{font-size:11px;color:var(--text3);font-weight:600;}
+    .round-line{flex:1;height:1px;background:var(--border);}
+
+    .break-card{
+      background:var(--surface);border:1px solid var(--border);
+      border-left:3px solid var(--gold);
+      border-radius:var(--radius);padding:14px 18px;
+      text-align:center;color:var(--text2);font-size:13px;font-weight:600;
+      margin-bottom:24px;
+    }
+    .break-card b{color:var(--gold);}
+
+    /* ══════════════════════════════════
+       MATCH CARDS
+    ══════════════════════════════════ */
+    .match-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    @media(max-width:400px){.match-grid{grid-template-columns:1fr;}}
+
+    .match-card{
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:var(--radius);overflow:hidden;cursor:pointer;
+      transition:transform .15s,box-shadow .15s,border-color .15s;
+      position:relative;
+    }
+    .match-card:active{transform:scale(.97);}
+    .match-card.done{border-color:#1f3a1f;}
+    .match-card.done::before{
+      content:'';position:absolute;inset:0;pointer-events:none;
+      background:linear-gradient(135deg,rgba(0,230,118,.03),transparent);
+    }
+    .match-card.full-w{grid-column:1/-1;}
+
+    /* card glow on hover (desktop) */
+    @media(hover:hover){
+      .match-card:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.5);border-color:var(--border2);}
+      .match-card.done:hover{border-color:#2a5a2a;}
+    }
+
+    /* Card top bar */
+    .mc-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border);}
+    .court-tag{font-size:10px;font-weight:800;padding:3px 9px;border-radius:7px;letter-spacing:.5px;}
+    .ct-A{background:rgba(68,138,255,.15);color:#82b1ff;border:1px solid rgba(68,138,255,.2);}
+    .ct-B{background:rgba(124,77,255,.15);color:#b388ff;border:1px solid rgba(124,77,255,.2);}
+    .ct-C{background:rgba(0,230,118,.1);color:#69f0ae;border:1px solid rgba(0,230,118,.2);}
+    .ct-D{background:rgba(255,109,0,.12);color:#ffab40;border:1px solid rgba(255,109,0,.2);}
+    .ct-AB{background:rgba(255,214,0,.1);color:#ffd740;border:1px solid rgba(255,214,0,.2);}
+    .cat-tag{font-size:10px;font-weight:800;padding:3px 9px;border-radius:7px;}
+    .cU12{background:rgba(68,138,255,.12);color:#82b1ff;}
+    .cU10{background:rgba(255,109,0,.12);color:#ffab40;}
+
+    /* Card body */
+    .mc-body{padding:12px 12px 10px;}
+    .mc-label{font-size:10px;color:var(--text3);text-align:center;margin-bottom:8px;font-weight:600;}
+    .mc-note{
+      display:inline-block;font-size:10px;background:rgba(255,214,0,.1);
+      color:var(--gold-dim);border:1px solid rgba(255,214,0,.2);
+      padding:2px 8px;border-radius:6px;margin-bottom:8px;
+    }
+
+    .teams-row{display:grid;grid-template-columns:1fr 20px 1fr;align-items:center;gap:4px;}
+    .team-col{text-align:center;}
+    .team-nm{font-size:12px;font-weight:700;line-height:1.25;color:var(--text);}
+    .team-sc{font-size:34px;font-weight:900;line-height:1;margin-top:6px;color:var(--text3);}
+    .team-sc.win{color:var(--green);text-shadow:0 0 20px rgba(0,230,118,.4);}
+    .team-sc.lose{color:#333;}
+    .team-sc.draw{color:var(--gold);}
+    .sc-div{font-size:16px;color:var(--border2);text-align:center;}
+    .vs-lbl{font-size:10px;font-weight:800;color:var(--text3);text-align:center;}
+
+    /* Card footer */
+    .mc-foot{padding:8px 12px 10px;display:flex;align-items:center;gap:7px;}
+    .status-dot{
+      width:6px;height:6px;border-radius:50%;flex-shrink:0;
+      background:var(--border2);
+    }
+    .status-dot.done{background:var(--green);box-shadow:0 0 6px var(--green);}
+    .status-txt{font-size:10px;color:var(--text3);font-weight:600;flex:1;}
+    .status-txt.done{color:var(--green);}
+    .enter-btn{
+      padding:6px 12px;background:var(--green);color:#000;border:none;
+      border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;
+      transition:.15s;flex-shrink:0;
+    }
+    .enter-btn:active{opacity:.8;}
+    .enter-btn.edit{background:var(--surface3);color:var(--text2);border:1px solid var(--border2);}
+
+    /* ══════════════════════════════════
+       TEAMS TAB
+    ══════════════════════════════════ */
+    .sec-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;margin-top:4px;}
+    .sec-h{font-size:16px;font-weight:800;color:var(--text);}
+    .sec-line{flex:1;height:1px;background:var(--border);}
+
+    .cat-pill{
+      display:inline-flex;align-items:center;gap:6px;
+      font-size:11px;font-weight:800;padding:5px 14px;border-radius:20px;
+      margin-bottom:12px;letter-spacing:.5px;
+    }
+    .cp-u12{background:rgba(68,138,255,.15);color:#82b1ff;border:1px solid rgba(68,138,255,.25);}
+    .cp-u10{background:rgba(255,109,0,.15);color:#ffab40;border:1px solid rgba(255,109,0,.25);}
+
+    .groups-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px;}
+    @media(max-width:400px){.groups-grid{grid-template-columns:1fr 1fr;}}
+
+    .group-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+    .gc-head{
+      padding:8px 14px;font-size:11px;font-weight:800;
+      background:linear-gradient(135deg,var(--green-dim),var(--green));
+      color:#000;letter-spacing:.5px;
+    }
+    .gc-item{
+      padding:10px 14px;font-size:12px;font-weight:600;
+      border-bottom:1px solid var(--border);color:var(--text);
+      display:flex;align-items:center;gap:8px;
+    }
+    .gc-item:last-child{border-bottom:none;}
+    .gc-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0;}
+
+    .format-card{
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:var(--radius);padding:18px;font-size:13px;
+      line-height:1.8;color:var(--text2);
+    }
+    .format-card strong{color:var(--text);}
+    .format-card hr{border:none;border-top:1px solid var(--border);margin:12px 0;}
+
+    /* ══════════════════════════════════
+       STANDINGS
+    ══════════════════════════════════ */
+    .std-note{
+      background:var(--surface);border:1px solid var(--border);
+      border-left:3px solid var(--green);
+      border-radius:var(--radius);padding:12px 16px;
+      font-size:12px;color:var(--text2);margin-bottom:18px;
+    }
+    .std-grp-label{
+      font-size:12px;font-weight:700;color:var(--text2);
+      padding:8px 0 10px;display:flex;align-items:center;gap:8px;
+    }
+    .std-grp-label::after{content:'';flex:1;height:1px;background:var(--border);}
+
+    .std-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border);margin-bottom:16px;}
+    table.std{width:100%;border-collapse:collapse;background:var(--surface);min-width:340px;}
+    table.std thead th{
+      padding:10px 10px;font-size:10px;font-weight:800;
+      text-transform:uppercase;letter-spacing:.8px;
+      background:rgba(0,230,118,.08);color:var(--green);
+      text-align:center;border-bottom:1px solid var(--border);
+      white-space:nowrap;
+    }
+    table.std thead th:first-child{text-align:left;padding-left:14px;}
+    table.std tbody td{
+      padding:11px 10px;font-size:12px;text-align:center;
+      border-bottom:1px solid var(--border);color:var(--text2);
+    }
+    table.std tbody td:first-child{text-align:left;padding-left:14px;font-weight:700;color:var(--text);}
+    table.std tbody tr:last-child td{border-bottom:none;}
+    table.std tbody tr:nth-child(1) td{background:rgba(255,214,0,.04);}
+    .pts-val{font-weight:900;color:var(--green);}
+    .gd-p{color:var(--green);}
+    .gd-n{color:var(--red);}
+
+    /* ══════════════════════════════════
+       MODAL
+    ══════════════════════════════════ */
+    .overlay{
+      display:none;position:fixed;inset:0;z-index:500;
+      background:rgba(0,0,0,.8);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+      align-items:flex-end;justify-content:center;padding:0;
+    }
+    .overlay.open{display:flex;}
+    .modal{
+      background:var(--surface);
+      border:1px solid var(--border2);border-bottom:none;
+      border-radius:24px 24px 0 0;
+      padding:20px 20px calc(24px + env(safe-area-inset-bottom));
+      width:100%;max-width:480px;
+      animation:slideUp .25s cubic-bezier(.17,.67,.35,.99);
+    }
+    @keyframes slideUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+    .modal-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 20px;}
+    .modal-title{font-size:18px;font-weight:800;color:var(--text);margin-bottom:2px;}
+    .modal-sub{font-size:12px;color:var(--text2);margin-bottom:22px;}
+    .modal-score-row{display:grid;grid-template-columns:1fr 40px 1fr;align-items:center;gap:10px;margin-bottom:22px;}
+    .modal-team{text-align:center;}
+    .mteam-nm{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;line-height:1.3;}
+    .score-inp{
+      width:100%;padding:14px 6px;font-size:36px;font-weight:900;text-align:center;
+      background:var(--surface2);border:2px solid var(--border2);border-radius:14px;
+      outline:none;color:var(--text);transition:.2s;
+      -moz-appearance:textfield;
+    }
+    .score-inp::-webkit-outer-spin-button,.score-inp::-webkit-inner-spin-button{-webkit-appearance:none;}
+    .score-inp:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(0,230,118,.12);}
+    .modal-vs-txt{font-size:20px;font-weight:900;color:var(--text3);text-align:center;}
+    .modal-btns{display:grid;grid-template-columns:1fr 1fr 2fr;gap:8px;}
+    .mbtn{
+      padding:14px;border-radius:14px;font-size:13px;font-weight:800;
+      cursor:pointer;border:none;transition:.15s;
+    }
+    .mbtn:active{opacity:.8;transform:scale(.97);}
+    .mbtn-clear{background:rgba(255,23,68,.1);color:var(--red);}
+    .mbtn-cancel{background:var(--surface3);color:var(--text2);}
+    .mbtn-save{background:var(--green);color:#000;box-shadow:0 0 20px rgba(0,230,118,.25);}
+
+    /* ══════════════════════════════════
+       FOOTER
+    ══════════════════════════════════ */
+    .footer{text-align:center;padding:16px;color:var(--text3);font-size:11px;border-top:1px solid var(--border);}
+  </style>
+</head>
+<body>
+
+<!-- HERO -->
+<header class="hero">
+  <img class="hero-img" src="hero.jpg" alt="タクマ塾CUP" onerror="this.style.display='none';this.parentElement.style.background='linear-gradient(160deg,#0d1f0d,#060f06)';this.parentElement.style.minHeight='300px'">
+  <div class="h-inner">
+    <div class="h-eyebrow">⚽ 大会公式サイト</div>
+    <h1 class="h-title">タクマ塾CUP<span>in 岩国</span></h1>
+    <p class="h-sub">フットサル大会 — 体育館・屋外コート</p>
+    <div class="h-chips">
+      <div class="h-chip">🕘 キックオフ <b>9:00</b></div>
+      <div class="h-chip">⏱ <b>15−5−15分</b></div>
+      <div class="h-chip">🏟 <b>A・B・C・D</b> 4コート</div>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- SCHEDULE -->
+  <div id="tab-schedule" class="tab active">
+    <div class="filter-bar">
+      <button class="fbtn active" onclick="filterMatches('all',this)">すべて</button>
+      <button class="fbtn" onclick="filterMatches('U12',this)">🔵 U12</button>
+      <button class="fbtn" onclick="filterMatches('U10',this)">🟠 U10</button>
+      <button class="fbtn" onclick="filterMatches('group',this)">予選のみ</button>
+    </div>
+    <div id="schedule-content"></div>
+  </div>
+
+  <!-- TEAMS -->
+  <div id="tab-teams" class="tab">
+    <div class="sec-head"><span class="sec-h">参加チーム</span><div class="sec-line"></div></div>
+
+    <div class="cat-pill cp-u12">🔵 U-12カテゴリー — 9チーム</div>
+    <div class="groups-grid">
+      <div class="group-card">
+        <div class="gc-head">🅰 グループA</div>
+        <div class="gc-item"><div class="gc-dot"></div>福山シティYAHATA</div>
+        <div class="gc-item"><div class="gc-dot"></div>岩国</div>
+        <div class="gc-item"><div class="gc-dot"></div>勝間</div>
+      </div>
+      <div class="group-card">
+        <div class="gc-head">🅱 グループB</div>
+        <div class="gc-item"><div class="gc-dot"></div>富田</div>
+        <div class="gc-item"><div class="gc-dot"></div>久賀</div>
+        <div class="gc-item"><div class="gc-dot"></div>平田</div>
+      </div>
+      <div class="group-card">
+        <div class="gc-head">🅲 グループC</div>
+        <div class="gc-item"><div class="gc-dot"></div>五日市観音</div>
+        <div class="gc-item"><div class="gc-dot"></div>麻里布</div>
+        <div class="gc-item"><div class="gc-dot"></div>玖珂</div>
+      </div>
+    </div>
+
+    <div class="cat-pill cp-u10" style="margin-top:4px">🟠 U-10カテゴリー — 6チーム</div>
+    <div class="groups-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="group-card">
+        <div class="gc-head">🅰 グループA</div>
+        <div class="gc-item"><div class="gc-dot"></div>富田</div>
+        <div class="gc-item"><div class="gc-dot"></div>大竹</div>
+        <div class="gc-item"><div class="gc-dot"></div>平田</div>
+      </div>
+      <div class="group-card">
+        <div class="gc-head">🅱 グループB</div>
+        <div class="gc-item"><div class="gc-dot"></div>麻里布</div>
+        <div class="gc-item"><div class="gc-dot"></div>岩国</div>
+        <div class="gc-item"><div class="gc-dot"></div>フトゥール</div>
+      </div>
+    </div>
+
+    <div class="sec-head" style="margin-top:8px"><span class="sec-h">大会方式</span><div class="sec-line"></div></div>
+    <div class="format-card">
+      <p><strong>U-12（9チーム）</strong><br>
+      3グループ（A/B/C）各3チーム総当たり予選<br>
+      準決勝：A1位 vs ワイルドカード ／ B1位 vs C1位<br>
+      → 3位決定戦・決勝（体育館全面）</p>
+      <hr>
+      <p><strong>U-10（6チーム）</strong><br>
+      2グループ（A/B）各3チーム総当たり予選<br>
+      準決勝：A1位 vs B2位 ／ B1位 vs A2位<br>
+      → 3位決定戦・決勝（体育館全面）</p>
+    </div>
+  </div>
+
+  <!-- STANDINGS -->
+  <div id="tab-standings" class="tab">
+    <div class="std-note">💡 スコアを入力すると自動更新。勝=3pt、分=1pt、負=0pt。</div>
+    <div id="standings-content"></div>
+  </div>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="footer">タクマ塾CUP in 岩国 ・ 大会管理システム</footer>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <div class="bnav-btn active" onclick="showTab('schedule',this)" id="bnav-schedule">
+    <span class="ico">📋</span>スケジュール
+  </div>
+  <div class="bnav-btn" onclick="showTab('teams',this)" id="bnav-teams">
+    <span class="ico">🧩</span>参加チーム
+  </div>
+  <div class="bnav-btn" onclick="showTab('standings',this)" id="bnav-standings">
+    <span class="ico">🏆</span>順位表
+  </div>
+</nav>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="overlayClick(event)">
+  <div class="modal" id="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="m-title">スコア入力</div>
+    <div class="modal-sub" id="m-sub">試合結果を入力</div>
+    <div class="modal-score-row">
+      <div class="modal-team">
+        <div class="mteam-nm" id="m-home">ホーム</div>
+        <input class="score-inp" type="number" id="inp-h" min="0" max="99" placeholder="0">
+      </div>
+      <div class="modal-vs-txt">:</div>
+      <div class="modal-team">
+        <div class="mteam-nm" id="m-away">アウェイ</div>
+        <input class="score-inp" type="number" id="inp-a" min="0" max="99" placeholder="0">
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="mbtn mbtn-clear" onclick="clearScore()">クリア</button>
+      <button class="mbtn mbtn-cancel" onclick="closeModal()">戻る</button>
+      <button class="mbtn mbtn-save" onclick="saveScore()">保存 ✓</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════
+const MATCHES = [
+  {id:1,round:'第1試合',time:'9:00～9:35',court:'A',cat:'U12',grp:'A',home:'福山シティYAHATA',away:'岩国',type:'group'},
+  {id:2,round:'第1試合',time:'9:00～9:35',court:'B',cat:'U12',grp:'B',home:'富田',away:'久賀',type:'group'},
+  {id:3,round:'第1試合',time:'9:00～9:35',court:'C',cat:'U10',grp:'A',home:'富田',away:'大竹',type:'group'},
+  {id:4,round:'第1試合',time:'9:00～9:35',court:'D',cat:'U10',grp:'B',home:'麻里布',away:'岩国',type:'group'},
+  {id:5,round:'第2試合',time:'9:40～10:15',court:'A',cat:'U12',grp:'C',home:'五日市観音',away:'麻里布',type:'group'},
+  {id:6,round:'第2試合',time:'9:40～10:15',court:'B',cat:'U12',grp:'A',home:'岩国',away:'勝間',type:'group'},
+  {id:7,round:'第2試合',time:'9:40～10:15',court:'C',cat:'U10',grp:'A',home:'大竹',away:'平田',type:'group'},
+  {id:8,round:'第2試合',time:'9:40～10:15',court:'D',cat:'U10',grp:'B',home:'岩国',away:'フトゥール',type:'group'},
+  {id:9,round:'第3試合',time:'10:20～10:55',court:'A',cat:'U12',grp:'B',home:'久賀',away:'平田',type:'group'},
+  {id:10,round:'第3試合',time:'10:20～10:55',court:'B',cat:'U12',grp:'C',home:'五日市観音',away:'玖珂',type:'group'},
+  {id:11,round:'第3試合',time:'10:20～10:55',court:'C',cat:'U10',grp:'A',home:'富田',away:'平田',type:'group'},
+  {id:12,round:'第3試合',time:'10:20～10:55',court:'D',cat:'U10',grp:'B',home:'麻里布',away:'フトゥール',type:'group'},
+  {id:13,round:'第4試合',time:'11:00～11:35',court:'A',cat:'U12',grp:'A',home:'福山シティYAHATA',away:'勝間',type:'group'},
+  {id:14,round:'第4試合',time:'11:00～11:35',court:'B',cat:'U12',grp:'B',home:'富田',away:'平田',type:'group'},
+  {id:15,round:'第4試合',time:'11:00～11:35',court:'C',cat:'U10',home:'A3位',away:'B3位',type:'friendly',label:'U10 フレンドリー',note:'フレンドリーマッチ'},
+  {id:16,round:'第4試合',time:'11:00～11:35',court:'D',cat:'U12',grp:'C',home:'麻里布',away:'玖珂',type:'group'},
+  {id:17,round:'準決勝',time:'12:20～12:55',court:'A',cat:'U12',home:'A1位',away:'ワイルドカード',type:'semi',label:'U12 準決勝①'},
+  {id:18,round:'準決勝',time:'12:20～12:55',court:'B',cat:'U12',home:'B1位',away:'C1位',type:'semi',label:'U12 準決勝②'},
+  {id:19,round:'準決勝',time:'12:20～12:55',court:'C',cat:'U10',home:'A1位',away:'B2位',type:'semi',label:'U10 準決勝①'},
+  {id:20,round:'準決勝',time:'12:20～12:55',court:'D',cat:'U10',home:'B1位',away:'A2位',type:'semi',label:'U10 準決勝②'},
+  {id:21,round:'フレンドリー',time:'13:00～13:35',court:'A',cat:'U12',home:'TBD',away:'TBD',type:'friendly',label:'U12 フレンドリー①'},
+  {id:22,round:'フレンドリー',time:'13:00～13:35',court:'B',cat:'U12',home:'TBD',away:'TBD',type:'friendly',label:'U12 フレンドリー②'},
+  {id:23,round:'フレンドリー',time:'13:00～13:35',court:'C',cat:'U12',home:'TBD',away:'TBD',type:'friendly',label:'U12 フレンドリー③'},
+  {id:24,round:'フレンドリー',time:'13:00～13:35',court:'D',cat:'U10',home:'A3位',away:'B3位',type:'friendly',label:'U10 フレンドリー'},
+  {id:25,round:'3位決定戦',time:'13:40～14:15',court:'A',cat:'U12',home:'TBD',away:'TBD',type:'third',label:'U12 3位決定戦'},
+  {id:26,round:'3位決定戦',time:'13:40～14:15',court:'B',cat:'U10',home:'TBD',away:'TBD',type:'third',label:'U10 3位決定戦'},
+  {id:27,round:'U10 決勝',time:'14:20～14:55',court:'AB',cat:'U10',home:'TBD',away:'TBD',type:'final',label:'⭐ U-10 決勝（体育館全面）',full:true},
+  {id:28,round:'U12 決勝',time:'15:00～15:35',court:'AB',cat:'U12',home:'TBD',away:'TBD',type:'final',label:'⭐ U-12 決勝（体育館全面）',full:true},
+];
+
+const GROUPS = {
+  U12:{A:['福山シティYAHATA','岩国','勝間'],B:['富田','久賀','平田'],C:['五日市観音','麻里布','玖珂']},
+  U10:{A:['富田','大竹','平田'],B:['麻里布','岩国','フトゥール']}
+};
+
+const ROUND_ORDER = ['第1試合','第2試合','第3試合','第4試合','準決勝','フレンドリー','3位決定戦','U10 決勝','U12 決勝'];
+const TYPE_ICON = {group:'⚽',semi:'⚡',friendly:'🤝',third:'🥉',final:'🏆'};
+
+let scores = {};
+let activeFilter = 'all';
+let currentId = null;
+
+// ─── Storage ───
+function load(){try{const s=localStorage.getItem('tc_scores');if(s)scores=JSON.parse(s);}catch(e){}}
+function save(){try{localStorage.setItem('tc_scores',JSON.stringify(scores));}catch(e){}}
+
+// ═══════════════════════════════════════════
+// RENDER SCHEDULE
+// ═══════════════════════════════════════════
+function renderSchedule(){
+  const byRound = {};
+  MATCHES.forEach(m=>{if(!byRound[m.round])byRound[m.round]=[];byRound[m.round].push(m);});
+
+  let html = '';
+  ROUND_ORDER.forEach(rnd=>{
+    const ms = byRound[rnd]; if(!ms) return;
+
+    // apply filter
+    let show = ms;
+    if(activeFilter==='U12') show = ms.filter(m=>m.cat==='U12');
+    else if(activeFilter==='U10') show = ms.filter(m=>m.cat==='U10');
+    else if(activeFilter==='group') show = ms.filter(m=>m.type==='group');
+    if(!show.length) return;
+
+    const ico = TYPE_ICON[ms[0].type]||'⚽';
+    html += `<div class="round-block">
+      <div class="round-head">
+        <div class="round-pill">${ico} ${rnd}</div>
+        <div class="round-time">${ms[0].time}</div>
+        <div class="round-line"></div>
+      </div>
+      <div class="match-grid">`;
+
+    show.forEach(m=>{ html += renderCard(m); });
+    html += `</div></div>`;
+
+    if(rnd==='第4試合'){
+      html += `<div class="break-card">⏸ <b>11:40～12:15</b>　予選順位集計・休憩</div>`;
+    }
+  });
+
+  document.getElementById('schedule-content').innerHTML = html;
+}
+
+function renderCard(m){
+  const s = scores[m.id];
+  const done = s !== undefined;
+  let hSc = done ? s.home : null;
+  let aSc = done ? s.away : null;
+  let hCls='', aCls='';
+  if(done){
+    if(hSc>aSc){hCls='win';aCls='lose';}
+    else if(hSc<aSc){hCls='lose';aCls='win';}
+    else{hCls='draw';aCls='draw';}
+  }
+
+  const tbd = ['TBD','A1位','B1位','A3位','B3位','ワイルドカード'].includes(m.home);
+  const canScore = !tbd;
+
+  const labelHtml = m.label ? `<div class="mc-label">${m.label}</div>` : '';
+  const noteHtml  = m.note  ? `<span class="mc-note">${m.note}</span>` : '';
+
+  const hScHtml = done ? `<div class="team-sc ${hCls}">${hSc}</div>` : `<div class="team-sc">—</div>`;
+  const aScHtml = done ? `<div class="team-sc ${aCls}">${aSc}</div>` : `<div class="team-sc">—</div>`;
+  const midHtml = done ? `<div class="sc-div">:</div>` : `<div class="vs-lbl">VS</div>`;
+
+  let btnHtml = '';
+  if(canScore){
+    btnHtml = done
+      ? `<button class="enter-btn edit" onclick="openModal(${m.id},event)">編集</button>`
+      : `<button class="enter-btn" onclick="openModal(${m.id},event)">入力</button>`;
+  }
+
+  return `
+  <div class="match-card ${done?'done':''} ${m.full?'full-w':''}" id="mc-${m.id}">
+    <div class="mc-bar">
+      <span class="court-tag ct-${m.court}">コート${m.court}</span>
+      <span class="cat-tag cU${m.cat==='U12'?'12':'10'}">${m.cat}</span>
+    </div>
+    <div class="mc-body">
+      ${labelHtml}${noteHtml}
+      <div class="teams-row">
+        <div class="team-col"><div class="team-nm">${m.home}</div>${hScHtml}</div>
+        ${midHtml}
+        <div class="team-col"><div class="team-nm">${m.away}</div>${aScHtml}</div>
+      </div>
+    </div>
+    <div class="mc-foot">
+      <div class="status-dot ${done?'done':''}"></div>
+      <div class="status-txt ${done?'done':''}">${done?'入力済':'未入力'}</div>
+      ${btnHtml}
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════
+function openModal(id, e){
+  if(e) e.stopPropagation();
+  const m = MATCHES.find(x=>x.id===id);
+  currentId = id;
+  document.getElementById('m-title').textContent = m.label || `${m.round} コート${m.court}`;
+  document.getElementById('m-sub').textContent = `${m.cat} • ${m.time}`;
+  document.getElementById('m-home').textContent = m.home;
+  document.getElementById('m-away').textContent = m.away;
+  const s = scores[id];
+  document.getElementById('inp-h').value = s != null ? s.home : '';
+  document.getElementById('inp-a').value = s != null ? s.away : '';
+  document.getElementById('overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('inp-h').focus(),150);
+}
+
+function closeModal(){
+  document.getElementById('overlay').classList.remove('open');
+  currentId = null;
+}
+
+function overlayClick(e){
+  if(e.target===document.getElementById('overlay')) closeModal();
+}
+
+function saveScore(){
+  const h = parseInt(document.getElementById('inp-h').value);
+  const a = parseInt(document.getElementById('inp-a').value);
+  if(isNaN(h)||isNaN(a)||h<0||a<0){alert('スコアを正しく入力してください');return;}
+  scores[currentId]={home:h,away:a};
+  save(); closeModal(); renderSchedule(); renderStandings();
+}
+
+function clearScore(){
+  if(!confirm('スコアを削除しますか？')) return;
+  delete scores[currentId];
+  save(); closeModal(); renderSchedule(); renderStandings();
+}
+
+// ═══════════════════════════════════════════
+// STANDINGS
+// ═══════════════════════════════════════════
+function calcGroup(cat,grp){
+  const teams = GROUPS[cat][grp];
+  const st = {};
+  teams.forEach(t=>st[t]={w:0,d:0,l:0,gf:0,ga:0,pts:0,mp:0});
+  MATCHES.filter(m=>m.cat===cat&&m.grp===grp&&m.type==='group').forEach(m=>{
+    const s = scores[m.id]; if(!s) return;
+    const {home:h,away:a}=s;
+    st[m.home].gf+=h;st[m.home].ga+=a;st[m.home].mp++;
+    st[m.away].gf+=a;st[m.away].ga+=h;st[m.away].mp++;
+    if(h>a){st[m.home].w++;st[m.home].pts+=3;st[m.away].l++;}
+    else if(h<a){st[m.away].w++;st[m.away].pts+=3;st[m.home].l++;}
+    else{st[m.home].d++;st[m.home].pts++;st[m.away].d++;st[m.away].pts++;}
+  });
+  return teams.map(t=>({name:t,...st[t],gd:st[t].gf-st[t].ga}))
+    .sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf);
+}
+
+function renderStandings(){
+  const RI = ['🥇','🥈','🥉'];
+  let html='';
+  ['U12','U10'].forEach(cat=>{
+    const pill = cat==='U12'
+      ? '<span class="cat-pill cp-u12">🔵 U12カテゴリー</span>'
+      : '<span class="cat-pill cp-u10">🟠 U10カテゴリー</span>';
+    html += `<div style="margin-bottom:24px">${pill}`;
+    Object.keys(GROUPS[cat]).forEach(grp=>{
+      const rows = calcGroup(cat,grp);
+      html += `<div class="std-grp-label">グループ ${grp}</div>
+      <div class="std-wrap"><table class="std">
+        <thead><tr>
+          <th>チーム</th><th>試合</th><th>勝</th><th>分</th><th>負</th>
+          <th>得</th><th>失</th><th>差</th><th>勝点</th>
+        </tr></thead><tbody>`;
+      rows.forEach((r,i)=>{
+        const gc = r.gd>0?'gd-p':r.gd<0?'gd-n':'';
+        html+=`<tr>
+          <td>${RI[i]||''} ${r.name}</td>
+          <td>${r.mp}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td>
+          <td>${r.gf}</td><td>${r.ga}</td>
+          <td class="${gc}">${r.gd>0?'+':''}${r.gd}</td>
+          <td><b class="pts-val">${r.pts}</b></td>
+        </tr>`;
+      });
+      html+=`</tbody></table></div>`;
+    });
+    html+=`</div>`;
+  });
+  document.getElementById('standings-content').innerHTML=html;
+}
+
+// ═══════════════════════════════════════════
+// NAV / FILTER
+// ═══════════════════════════════════════════
+function filterMatches(f, btn){
+  activeFilter = f;
+  document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderSchedule();
+}
+
+function showTab(name, btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// Keyboard
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') closeModal();
+  if(e.key==='Enter'&&currentId!==null) saveScore();
+});
+
+// ─── INIT ───
+load(); renderSchedule(); renderStandings();
+</script>
+</body>
+</html>
