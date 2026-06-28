@@ -719,8 +719,7 @@ function renderCard(m){
     else{hCls='draw';aCls='draw';}
   }
 
-  const tbd = ['TBD','A1位','B1位','A3位','B3位','ワイルドカード'].includes(m.home);
-  const canScore = isAdmin && !tbd;  // ← 管理者のみ入力ボタン表示
+  const canScore = isAdmin;  // 管理者は全試合入力可能
 
   const labelHtml = m.label ? `<div class="mc-label">${m.label}</div>` : '';
   const noteHtml  = m.note  ? `<span class="mc-note">${m.note}</span>` : '';
