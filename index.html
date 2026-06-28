@@ -319,6 +319,28 @@
     .gd-n{color:var(--red);}
 
     /* ══════════════════════════════════
+       GROUP COMMENTARY
+    ══════════════════════════════════ */
+    .grp-comment{
+      background:linear-gradient(135deg,rgba(0,230,118,.04),rgba(0,0,0,0));
+      border:1px solid rgba(0,230,118,.15);
+      border-left:3px solid var(--green);
+      border-radius:var(--radius);
+      padding:14px 16px;margin-bottom:20px;
+      font-size:12.5px;line-height:1.85;color:var(--text2);
+      position:relative;
+    }
+    .grp-comment-icon{
+      font-size:20px;float:left;margin-right:10px;margin-top:1px;line-height:1;
+    }
+    .grp-comment.pending{
+      border-left-color:var(--text3);
+      background:rgba(255,255,255,.02);
+    }
+    .grp-comment.pending .grp-comment-icon{filter:grayscale(1);opacity:.5;}
+    .grp-comment b{color:var(--text);}
+
+    /* ══════════════════════════════════
        TEAM NAME EDIT
     ══════════════════════════════════ */
     .team-edit-btn{
@@ -824,6 +846,99 @@ function clearScore(){
 }
 
 // ═══════════════════════════════════════════
+// GROUP COMMENTARY GENERATOR
+// ═══════════════════════════════════════════
+function generateGroupCommentary(cat, grp, rows){
+  const nm = t => getTeamName(t);
+  const totalGamesPlayed = rows.reduce((s,r)=>s+r.mp,0)/2;
+  const totalGoals = rows.reduce((s,r)=>s+r.gf,0)/2;
+  const maxGames = rows.length === 3 ? 3 : 3; // 3試合（3チーム総当たり）
+  const allDone = totalGamesPlayed >= maxGames;
+  const leader = rows[0], second = rows[1], third = rows[2];
+  const gap12 = leader.pts - second.pts;
+  const gap23 = second.pts - third.pts;
+  const avgGoals = totalGamesPlayed > 0 ? totalGoals / totalGamesPlayed : 0;
+
+  // ─── 未開始 ───
+  if(totalGamesPlayed === 0){
+    const names = rows.map(r=>nm(r.name));
+    return {
+      icon:'⏳', pending:true,
+      text:`<b>${names[0]}</b>・<b>${names[1]}</b>・<b>${names[2]}</b>の3チームが激突する${cat}グループ${grp}。いよいよ予選の火ぶたが切られようとしています。どのチームが首位通過を掴み取るのか——注目の幕開けです！`
+    };
+  }
+
+  let sentences = [];
+  let icon = '📊';
+
+  // ─── 1文目：首位の状況 ───
+  if(allDone){
+    if(leader.pts === 6){
+      icon = '🏆';
+      sentences.push(`<b>${nm(leader.name)}</b>が全勝・勝点6という文句なしの完璧な成績でグループ${grp}を制覇！`);
+    } else if(leader.pts === 3 && gap12 === 0 && gap23 === 0){
+      icon = '⚡';
+      sentences.push(`グループ${grp}は3チームが勝点${leader.pts}で並ぶという歴史的な大混戦に決着！得失点差という最後の砦で順位が決まる、まさに息詰まる結末となりました。`);
+    } else if(gap12 === 0){
+      icon = '⚡';
+      sentences.push(`<b>${nm(leader.name)}</b>と<b>${nm(second.name)}</b>が勝点${leader.pts}で並んだグループ${grp}。最終的には得失点差（${leader.gd>0?'+':''}${leader.gd} vs ${second.gd>0?'+':''}${second.gd}）という紙一重の差で順位が確定しました。`);
+    } else if(leader.pts === 4){
+      icon = '✅';
+      sentences.push(`混戦を制した<b>${nm(leader.name)}</b>が勝点${leader.pts}でグループ${grp}首位通過！安定した戦いぶりで決勝トーナメントへの切符を手にしました。`);
+    } else {
+      icon = '✅';
+      sentences.push(`グループ${grp}予選が全日程終了。<b>${nm(leader.name)}</b>が勝点${leader.pts}で堂々の首位通過を決めました！`);
+    }
+  } else {
+    const remaining = maxGames - totalGamesPlayed;
+    if(leader.pts === 6){
+      icon = '🔥';
+      sentences.push(`<b>${nm(leader.name)}</b>が2戦全勝・勝点6で早くもグループ${grp}の首位を独走中！残り${remaining}試合を残して早くも決勝進出に王手をかけています。`);
+    } else if(gap12 === 0){
+      icon = '⚡';
+      sentences.push(`現在グループ${grp}は<b>${nm(leader.name)}</b>と<b>${nm(second.name)}</b>が勝点${leader.pts}で並ぶ大接戦！残り${remaining}試合、最終戦まで首位の行方は全くわかりません。`);
+    } else if(gap12 >= 3){
+      icon = '📊';
+      sentences.push(`グループ${grp}では<b>${nm(leader.name)}</b>が勝点${leader.pts}でリードを保っています。${nm(second.name)}との差は${gap12}点——残り${remaining}試合でどこまで詰められるか。`);
+    } else {
+      icon = '📊';
+      sentences.push(`グループ${grp}は<b>${nm(leader.name)}</b>が勝点${leader.pts}でリードも、まだ${remaining}試合を残す状況。何が起こるかわかりません！`);
+    }
+  }
+
+  // ─── 2文目：得点傾向 ───
+  if(totalGamesPlayed > 0){
+    if(avgGoals >= 5){
+      sentences.push(`このグループは1試合平均${avgGoals.toFixed(1)}ゴールという超ハイスコアな打ち合いが続いており、観客席を大いに沸かせています！`);
+    } else if(avgGoals >= 3){
+      sentences.push(`攻撃的な展開が続き、1試合平均${avgGoals.toFixed(1)}ゴールと見応え十分の試合内容となっています。`);
+    } else if(avgGoals <= 0.8 && totalGamesPlayed >= 2){
+      sentences.push(`双方の守備が高水準で、1試合平均${avgGoals.toFixed(1)}ゴールという締まった展開。わずかなチャンスをものにする集中力が明暗を分けています。`);
+    }
+  }
+
+  // ─── 3文目：注目チーム・ドラマ ───
+  if(leader.gd >= 5 && leader.mp > 0){
+    sentences.push(`<b>${nm(leader.name)}</b>の得失点差${leader.gd>0?'+':''}${leader.gd}はグループ随一の攻撃力を証明するもの。このまま勝ち上がれば決勝トーナメントでも台風の目となりそうです。`);
+  } else if(third.pts > 0 && !allDone){
+    sentences.push(`3位の<b>${nm(third.name)}</b>も勝点${third.pts}を確保。まだ諦めるわけにはいかない——最終戦で劇的な逆転進出を狙います！`);
+  } else if(allDone && third.pts >= 3){
+    sentences.push(`惜しくも3位となった<b>${nm(third.name)}</b>も勝点${third.pts}という奮闘を見せました。勝者を称えつつも、その戦いぶりは会場に深い印象を残しました。`);
+  } else if(allDone && gap23 === 0){
+    sentences.push(`2位・3位も勝点${second.pts}で並ぶという接戦。<b>${nm(second.name)}</b>が得失点差でなんとか2位を守りきりました。`);
+  }
+
+  // ─── 4文目（締め） ───
+  if(!allDone){
+    sentences.push(`${cat}グループ${grp}——まだ誰も諦めていない。最後の1笛が鳴るまで、全力で戦い抜く各チームに熱い声援を！`);
+  } else {
+    sentences.push(`グループ${grp}の戦いはここに幕を閉じました。勝ち上がった<b>${nm(leader.name)}</b>・<b>${nm(second.name)}</b>の決勝トーナメントでの活躍に期待が高まります！`);
+  }
+
+  return { icon, pending:false, text: sentences.join(' ') };
+}
+
+// ═══════════════════════════════════════════
 // STANDINGS
 // ═══════════════════════════════════════════
 function calcGroup(cat,grp){
@@ -870,6 +985,12 @@ function renderStandings(){
         </tr>`;
       });
       html+=`</tbody></table></div>`;
+      // 解説文
+      const comment = generateGroupCommentary(cat, grp, rows);
+      html+=`<div class="grp-comment${comment.pending?' pending':''}">
+        <span class="grp-comment-icon">${comment.icon}</span>
+        ${comment.text}
+      </div>`;
     });
     html+=`</div>`;
   });
