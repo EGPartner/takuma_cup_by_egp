@@ -612,9 +612,21 @@ function initFirebase(){
       if(dot) dot.className = 'conn-dot ' + (snap.val() ? 'ok' : 'err');
     });
 
+    // まずlocalStorageから即時表示（オフライン時もデータ保持）
+    try{const s=localStorage.getItem('tc_scores');if(s){scores=JSON.parse(s);renderSchedule();renderStandings();}}catch(e2){}
+
     // スコアをリアルタイムで受信（全員に届く）
     db.ref('scores').on('value', snap=>{
-      scores = snap.val() || {};
+      const fbData = snap.val();
+      // Firebaseにデータがある場合のみ上書き（空でもlocalStorageを残す）
+      if(fbData !== null){
+        scores = fbData;
+        try{localStorage.setItem('tc_scores', JSON.stringify(scores));}catch(e){}
+      } else {
+        // Firebaseが空 → localStorageのデータで初期化（初回またはクリア後）
+        scores = {};
+        try{localStorage.removeItem('tc_scores');}catch(e){}
+      }
       renderSchedule();
       renderStandings();
     });
@@ -632,10 +644,18 @@ function initFirebase(){
 function persistScore(id, data){
   if(db){
     if(data === null){
-      db.ref('scores/' + id).remove();
+      delete scores[id];
+      db.ref('scores/' + id).remove()
+        .catch(e=>{console.error('削除失敗:',e);alert('❌ 削除に失敗しました。ネットワークを確認してください。');});
     } else {
-      db.ref('scores/' + id).set(data);
+      scores[id] = data;
+      db.ref('scores/' + id).set(data)
+        .catch(e=>{console.error('保存失敗:',e);alert('❌ 保存に失敗しました。Firebaseのルールまたはネットワークを確認してください。');});
     }
+    // localStorageにもバックアップ保存
+    try{localStorage.setItem('tc_scores', JSON.stringify(scores));}catch(e){}
+    renderSchedule();
+    renderStandings();
   } else {
     if(data === null) delete scores[id]; else scores[id] = data;
     try{localStorage.setItem('tc_scores', JSON.stringify(scores));}catch(e){}
