@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>タクマ塾CUP in 岩国</title>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
     :root{
@@ -93,11 +96,12 @@
     .h-sub{font-size:13px;color:rgba(255,255,255,.7);margin-bottom:18px;text-shadow:0 1px 6px rgba(0,0,0,.5);}
     .h-chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
     .h-chip{
-      background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
-      border-radius:20px;padding:6px 14px;font-size:12px;color:var(--text2);
+      background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.2);
+      backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+      border-radius:20px;padding:6px 14px;font-size:12px;color:rgba(255,255,255,.8);
       display:flex;align-items:center;gap:5px;
     }
-    .h-chip b{color:var(--text);font-weight:700;}
+    .h-chip b{color:#fff;font-weight:700;}
 
     /* ══════════════════════════════════
        BOTTOM NAV (mobile-first)
@@ -358,12 +362,38 @@
     .mbtn-save{background:var(--green);color:#000;box-shadow:0 0 20px rgba(0,230,118,.25);}
 
     /* ══════════════════════════════════
+       ADMIN BANNER
+    ══════════════════════════════════ */
+    .admin-banner{
+      display:none;position:sticky;top:0;z-index:150;
+      background:linear-gradient(90deg,#1a0a00,#2d1500);
+      border-bottom:2px solid var(--gold);
+      padding:8px 16px;text-align:center;
+      font-size:12px;font-weight:700;color:var(--gold);
+      letter-spacing:.5px;
+    }
+    .admin-banner.show{display:block;}
+    .conn-dot{
+      display:inline-block;width:7px;height:7px;border-radius:50%;
+      background:#555;margin-right:6px;vertical-align:middle;
+      transition:background .3s;
+    }
+    .conn-dot.ok{background:var(--green);box-shadow:0 0 6px var(--green);}
+    .conn-dot.err{background:var(--red);}
+
+    /* ══════════════════════════════════
        FOOTER
     ══════════════════════════════════ */
     .footer{text-align:center;padding:16px;color:var(--text3);font-size:11px;border-top:1px solid var(--border);}
   </style>
 </head>
 <body>
+
+<!-- ADMIN BANNER -->
+<div class="admin-banner" id="admin-banner">
+  <span class="conn-dot" id="conn-dot"></span>
+  🔑 管理者モード — スコアを入力できます
+</div>
 
 <!-- HERO -->
 <header class="hero">
@@ -501,6 +531,23 @@
 
 <script>
 // ═══════════════════════════════════════════
+// ★ FIREBASE CONFIG ★  ← ここに自分のFirebase設定を貼る
+// ═══════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyDJlHlQk8K7OscsmorJX0vgWoT-1aIaO1Y",
+  authDomain:        "eg-partner.firebaseapp.com",
+  databaseURL:       "https://eg-partner-default-rtdb.firebaseio.com",
+  projectId:         "eg-partner",
+  storageBucket:     "eg-partner.firebasestorage.app",
+  messagingSenderId: "428352553892",
+  appId:             "1:428352553892:web:27570a0eb1861087d97731",
+  measurementId:     "G-T3X4KGFJ99"
+};
+
+// ★ 管理者パスワード（URLの ?admin=xxxx で使う）
+const ADMIN_PASS = 'takuma2026';
+
+// ═══════════════════════════════════════════
 // DATA
 // ═══════════════════════════════════════════
 const MATCHES = [
@@ -545,10 +592,57 @@ const TYPE_ICON = {group:'⚽',semi:'⚡',friendly:'🤝',third:'🥉',final:'�
 let scores = {};
 let activeFilter = 'all';
 let currentId = null;
+let db = null;
 
-// ─── Storage ───
-function load(){try{const s=localStorage.getItem('tc_scores');if(s)scores=JSON.parse(s);}catch(e){}}
-function save(){try{localStorage.setItem('tc_scores',JSON.stringify(scores));}catch(e){}}
+// ─── 管理者判定 ───
+const urlParams = new URLSearchParams(location.search);
+const isAdmin = urlParams.get('admin') === ADMIN_PASS;
+
+// ═══════════════════════════════════════════
+// FIREBASE INIT
+// ═══════════════════════════════════════════
+function initFirebase(){
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+
+    // 接続状態監視
+    db.ref('.info/connected').on('value', snap=>{
+      const dot = document.getElementById('conn-dot');
+      if(dot) dot.className = 'conn-dot ' + (snap.val() ? 'ok' : 'err');
+    });
+
+    // スコアをリアルタイムで受信（全員に届く）
+    db.ref('scores').on('value', snap=>{
+      scores = snap.val() || {};
+      renderSchedule();
+      renderStandings();
+    });
+
+  } catch(e) {
+    console.warn('Firebase未設定。ローカルモードで動作します。', e);
+    // Firebase未設定時はlocalStorageにフォールバック
+    try{const s=localStorage.getItem('tc_scores');if(s)scores=JSON.parse(s);}catch(e2){}
+    renderSchedule();
+    renderStandings();
+  }
+}
+
+// Firebase or localStorage 保存
+function persistScore(id, data){
+  if(db){
+    if(data === null){
+      db.ref('scores/' + id).remove();
+    } else {
+      db.ref('scores/' + id).set(data);
+    }
+  } else {
+    if(data === null) delete scores[id]; else scores[id] = data;
+    try{localStorage.setItem('tc_scores', JSON.stringify(scores));}catch(e){}
+    renderSchedule();
+    renderStandings();
+  }
+}
 
 // ═══════════════════════════════════════════
 // RENDER SCHEDULE
@@ -560,8 +654,6 @@ function renderSchedule(){
   let html = '';
   ROUND_ORDER.forEach(rnd=>{
     const ms = byRound[rnd]; if(!ms) return;
-
-    // apply filter
     let show = ms;
     if(activeFilter==='U12') show = ms.filter(m=>m.cat==='U12');
     else if(activeFilter==='U10') show = ms.filter(m=>m.cat==='U10');
@@ -576,21 +668,18 @@ function renderSchedule(){
         <div class="round-line"></div>
       </div>
       <div class="match-grid">`;
-
     show.forEach(m=>{ html += renderCard(m); });
     html += `</div></div>`;
-
     if(rnd==='第4試合'){
       html += `<div class="break-card">⏸ <b>11:40～12:15</b>　予選順位集計・休憩</div>`;
     }
   });
-
   document.getElementById('schedule-content').innerHTML = html;
 }
 
 function renderCard(m){
   const s = scores[m.id];
-  const done = s !== undefined;
+  const done = s !== undefined && s !== null;
   let hSc = done ? s.home : null;
   let aSc = done ? s.away : null;
   let hCls='', aCls='';
@@ -601,11 +690,10 @@ function renderCard(m){
   }
 
   const tbd = ['TBD','A1位','B1位','A3位','B3位','ワイルドカード'].includes(m.home);
-  const canScore = !tbd;
+  const canScore = isAdmin && !tbd;  // ← 管理者のみ入力ボタン表示
 
   const labelHtml = m.label ? `<div class="mc-label">${m.label}</div>` : '';
   const noteHtml  = m.note  ? `<span class="mc-note">${m.note}</span>` : '';
-
   const hScHtml = done ? `<div class="team-sc ${hCls}">${hSc}</div>` : `<div class="team-sc">—</div>`;
   const aScHtml = done ? `<div class="team-sc ${aCls}">${aSc}</div>` : `<div class="team-sc">—</div>`;
   const midHtml = done ? `<div class="sc-div">:</div>` : `<div class="vs-lbl">VS</div>`;
@@ -640,9 +728,10 @@ function renderCard(m){
 }
 
 // ═══════════════════════════════════════════
-// MODAL
+// MODAL（管理者のみ）
 // ═══════════════════════════════════════════
 function openModal(id, e){
+  if(!isAdmin) return;
   if(e) e.stopPropagation();
   const m = MATCHES.find(x=>x.id===id);
   currentId = id;
@@ -667,17 +756,19 @@ function overlayClick(e){
 }
 
 function saveScore(){
+  if(!isAdmin) return;
   const h = parseInt(document.getElementById('inp-h').value);
   const a = parseInt(document.getElementById('inp-a').value);
   if(isNaN(h)||isNaN(a)||h<0||a<0){alert('スコアを正しく入力してください');return;}
-  scores[currentId]={home:h,away:a};
-  save(); closeModal(); renderSchedule(); renderStandings();
+  persistScore(currentId, {home:h, away:a});
+  closeModal();
 }
 
 function clearScore(){
+  if(!isAdmin) return;
   if(!confirm('スコアを削除しますか？')) return;
-  delete scores[currentId];
-  save(); closeModal(); renderSchedule(); renderStandings();
+  persistScore(currentId, null);
+  closeModal();
 }
 
 // ═══════════════════════════════════════════
@@ -751,14 +842,16 @@ function showTab(name, btn){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-// Keyboard
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape') closeModal();
   if(e.key==='Enter'&&currentId!==null) saveScore();
 });
 
 // ─── INIT ───
-load(); renderSchedule(); renderStandings();
+if(isAdmin){
+  document.getElementById('admin-banner').classList.add('show');
+}
+initFirebase();
 </script>
 </body>
 </html>
